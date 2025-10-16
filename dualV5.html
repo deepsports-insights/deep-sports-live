@@ -56,14 +56,22 @@
     function stamp(){ return (new Date()).toLocaleTimeString(); }
     function qsGet(k){ var p=new URLSearchParams(location.search); return p.get(k); }
     function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent = txt; }
+
+    // Fetch tolerante: lee como texto; si es JSON válido, lo parsea; si no, muestra tal cual.
     function fetchJSON(u){
       var url = u + (u.indexOf('?')>=0?'&':'?') + '_=' + Date.now();
-      return fetch(url, {cache:'no-store'}).then(function(r){
-        if(!r.ok) throw new Error('HTTP '+r.status);
-        return r.json();
-      });
+      return fetch(url, { cache:'no-store' })
+        .then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status+' en '+url);
+          return r.text();
+        })
+        .then(function(txt){
+          try { return JSON.parse(txt); }
+          catch { return { msg: txt }; }
+        });
     }
-    // SOLO muestra el mensaje. Acepta string | objeto | array, y usa msg || text.
+
+    // SOLO muestra el mensaje. Acepta string | objeto | array; usa msg || text.
     function onlyMsg(data){
       try{
         if (typeof data === 'string') return data;
@@ -86,6 +94,7 @@
       }catch(e){}
       return 'Sin datos…';
     }
+
     function render(id, data){
       var el = document.getElementById(id);
       if(!el) return;
@@ -100,21 +109,25 @@
     if (title2) setText('titleR', title2);
 
     function tick(){
-      Promise.allSettled([fetchJSON(url1), fetchJSON(url2)]).then(function(res){
-        var a=res[0], b=res[1];
-        if(a.status==='fulfilled') render('feedL', a.value);
-        if(b.status==='fulfilled') render('feedR', b.value);
-        document.getElementById('status').textContent = 'OK • ' + stamp();
-      }).catch(function(e){
-        document.getElementById('status').textContent = 'ERR • ' + stamp();
-        console.error('tick error', e);
-      }).then(function(){
-        setTimeout(tick, interval);
-      });
+      Promise.allSettled([fetchJSON(url1), fetchJSON(url2)])
+        .then(function(res){
+          // logs mínimos para depurar en consola
+          console.log('[tick]', { a: res[0].status, aVal: res[0].value, b: res[1].status, bVal: res[1].value });
+
+          if(res[0].status==='fulfilled') render('feedL', res[0].value);
+          if(res[1].status==='fulfilled') render('feedR', res[1].value);
+          document.getElementById('status').textContent = 'OK • ' + stamp();
+        })
+        .catch(function(e){
+          document.getElementById('status').textContent = 'ERR • ' + stamp();
+          console.error('tick error', e);
+        })
+        .then(function(){
+          setTimeout(tick, interval);
+        });
     }
     tick();
   })();
   </script>
 </body>
 </html>
-
