@@ -24,13 +24,13 @@
 </style>
 </head>
 <body class="theme-broadcast">
+  <!-- NO FEED v4 -->
   <header class="bar top">
     <div class="brand">DeepSports Insights</div>
     <div class="now" id="status">cargando…</div>
   </header>
 
   <main class="dual">
-    <!-- Izquierda -->
     <section class="panel" id="panelL">
       <div class="panel-head">
         <div class="title" id="titleL">Partido A (Canal 1)</div>
@@ -39,7 +39,6 @@
       <div class="feed" id="feedL"><div class="empty">Sin datos…</div></div>
     </section>
 
-    <!-- Derecha -->
     <section class="panel" id="panelR">
       <div class="panel-head">
         <div class="title" id="titleR">Partido B (Canal 2)</div>
@@ -53,7 +52,6 @@
     <div class="hint">Params: ?url1=…/canal1.json&url2=…/canal2.json&interval=15000&title1=…&title2=…</div>
   </footer>
 
-  <!-- JS inline (ES5) -->
   <script>
   (function(){
     function stamp(){ return (new Date()).toLocaleTimeString(); }
@@ -66,7 +64,6 @@
         return r.json();
       });
     }
-
     // SOLO msg (si no hay msg -> "Sin datos…"). Soporta string, objeto o array.
     function onlyMsg(data){
       try{
@@ -84,14 +81,12 @@
       }catch(e){}
       return 'Sin datos…';
     }
-
     function render(id, data){
       var el = document.getElementById(id);
       if(!el) return;
       el.textContent = onlyMsg(data);
     }
 
-    // Parámetros
     var url1 = qsGet('url1') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
     var url2 = qsGet('url2') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal2.json';
     var interval = +(qsGet('interval') || 15000);
@@ -112,8 +107,9 @@
         setTimeout(tick, interval);
       });
     }
-    tick(); // primer tiro inmediato
+    tick();
   })();
   </script>
 </body>
 </html>
+
