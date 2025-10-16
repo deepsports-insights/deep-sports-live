@@ -13,7 +13,6 @@
   </header>
 
   <main class="dual">
-    <!-- Columna Izquierda -->
     <section class="panel" id="panelL">
       <div class="panel-head">
         <div class="title" id="titleL">Partido A (Canal 1)</div>
@@ -23,7 +22,6 @@
       <div class="swish" id="swishL" aria-hidden="true">🏀</div>
     </section>
 
-    <!-- Columna Derecha -->
     <section class="panel" id="panelR">
       <div class="panel-head">
         <div class="title" id="titleR">Partido B (Canal 2)</div>
@@ -35,176 +33,58 @@
   </main>
 
   <footer class="bar bottom">
-    <div class="hint">
-      Usa: ?url1=https://…/canal1.json&url2=https://…/canal2.json&interval=15000
-    </div>
+    <div class="hint">Usa: ?url1=https://…/canal1.json&url2=https://…/canal2.json&interval=15000</div>
   </footer>
 
-  <!-- SIN <script src="js/feed.js">  -->
+  <!-- NO cargamos js/feed.js -->
 
-  <!-- JS inline, compatible ES5 -->
+  <!-- JS inline compatible (ES5) -->
   <script>
   (function(){
-    // helpers (sin ?? ni ?.)
-    function nn(v, d){ return (v === undefined || v === null) ? d : v; }
-    function esc(s){
-      s = (s === undefined || s === null) ? '' : String(s);
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
     function stamp(){ return (new Date()).toLocaleTimeString(); }
-
-    function get(url){
-      var u = url + (url.indexOf('?')>=0 ? '&' : '?') + '_=' + Date.now();
-      return fetch(u, {cache:'no-store'}).then(function(r){
+    function fetchJSON(u){
+      var url = u + (u.indexOf('?')>=0?'&':'?') + '_=' + Date.now();
+      return fetch(url, {cache:'no-store'}).then(function(r){
         if(!r.ok) throw new Error('HTTP '+r.status);
         return r.json();
       });
     }
-
-    function normalize(payload){
-      if (payload === undefined || payload === null) return [];
-      if (Object.prototype.toString.call(payload) === '[object Array]') return payload;
-      if (typeof payload === 'string'){
-        return [{ text: payload, time: stamp(), level: 'ok' }];
+    function textFrom(data){
+      if (typeof data === 'string') return data;
+      if (Object.prototype.toString.call(data) === '[object Array]'){
+        var last = data[data.length-1] || {};
+        return last.text || last.msg || JSON.stringify(last);
       }
-      if (typeof payload === 'object'){
-        var txt = (payload.text !== undefined ? payload.text :
-                  (payload.msg !== undefined ? payload.msg : JSON.stringify(payload)));
-        return [{
-          text: txt,
-          time: (payload.time !== undefined ? payload.time : stamp()),
-          level: (payload.level !== undefined ? payload.level : 'ok'),
-          total: (payload.total !== undefined ? payload.total :
-                 (payload.score !== undefined ? payload.score :
-                 (payload.totalPts !== undefined ? payload.totalPts : null))),
-          scored: (payload.scored === true) || (payload.event === 'score')
-        }];
+      if (data && typeof data === 'object'){
+        return data.text || data.msg || JSON.stringify(data);
       }
-      return [{ text: String(payload), time: stamp(), level:'ok' }];
+      return 'Sin datos…';
+    }
+    function render(targetId, data){
+      var el = document.getElementById(targetId);
+      if (!el) return;
+      el.textContent = textFrom(data);
     }
 
-    function itemHTML(x){
-      var lv = String(nn(x.level,'')).toLowerCase();
-      var cls = (lv==='err') ? 'err' : ((lv==='warn') ? 'warn' : 'ok');
-      return '' +
-        '<div class="msg">' +
-          '<div class="row">' +
-            '<span class="'+cls+'">'+ esc(x.text || '') +'</span>' +
-            '<span class="time">'+ esc(x.time || '') +'</span>' +
-          '</div>' +
-        '</div>';
-    }
-
-    function render(list, el){
-      var arr = normalize(list);
-      if(!arr.length){
-        el.innerHTML = '<div class="msg empty">Sin datos…</div>';
-        return;
-      }
-      var toRender = (Object.prototype.toString.call(list) === '[object Array]') ? list : arr;
-      var out = '';
-      for (var i=0; i<toRender.length; i++) out += itemHTML(toRender[i]);
-      el.innerHTML = out;
-    }
-
-    function parseZPCTotalQuarter(text){
-      var str = String(text || '');
-      var lines = str.split(/\r?\n/);
-      for (var i=0;i<lines.length;i++){
-        var line = lines[i];
-        if (line.indexOf('🆚') >= 0){
-          var pts = line.match(/🧮\s*(\d{1,3})\s*pts/i);
-          var vs  = line.match(/(\d{1,3})\s*🆚\s*(\d{1,3})/);
-          if (pts) return +pts[1];
-          if (vs)  return (+vs[1]) + (+vs[2]);
-        }
-      }
-      var allPts = str.match(/🧮\s*(\d{1,3})\s*pts/gi);
-      if (allPts && allPts.length){
-        var last = allPts[allPts.length-1].match(/🧮\s*(\d{1,3})\s*pts/i);
-        if (last) return +last[1];
-      }
-      return null;
-    }
-
-    var lastTotals = { L: null, R: null };
-
-    function triggerScoreFX(which){
-      var panel = document.getElementById(which === 'L' ? 'panelL' : 'panelR');
-      if(!panel) return;
-      panel.classList.remove('score');
-      // reflow
-      void panel.offsetWidth;
-      panel.classList.add('score');
-      setTimeout(function(){ panel.classList.remove('score'); }, 800);
-    }
-
-    function checkScoreEvent(side, normalized){
-      var last = normalized[normalized.length - 1];
-      if (!last) return;
-
-      if (last.scored === true){ triggerScoreFX(side); return; }
-
-      if (last.total !== null && last.total !== undefined && !isNaN(+last.total)){
-        var t = +last.total, prev = lastTotals[side];
-        if (prev === null || prev === undefined){ lastTotals[side] = t; return; }
-        if (t > prev){ triggerScoreFX(side); lastTotals[side] = t; return; }
-        lastTotals[side] = t; return;
-      }
-
-      var inferred = parseZPCTotalQuarter(last.text);
-      var prev2 = lastTotals[side];
-      if (inferred !== null){
-        if (prev2 === null || prev2 === undefined){ lastTotals[side] = inferred; return; }
-        if (inferred > prev2){ triggerScoreFX(side); lastTotals[side] = inferred; return; }
-        lastTotals[side] = inferred;
-      }
-    }
-
-    function initDual(opts){
-      var url1 = opts.url1, url2 = opts.url2, interval = opts.interval;
-      var feedL = document.getElementById('feedL');
-      var feedR = document.getElementById('feedR');
-      var status = document.getElementById('status');
-
-      function tick(){
-        Promise.allSettled([get(url1), get(url2)]).then(function(res){
-          var a = res[0], b = res[1];
-          try{
-            if(a.status === 'fulfilled'){
-              var normA = normalize(a.value);
-              render(a.value, feedL);
-              checkScoreEvent('L', normA);
-            }
-            if(b.status === 'fulfilled'){
-              var normB = normalize(b.value);
-              render(b.value, feedR);
-              checkScoreEvent('R', normB);
-            }
-            status.textContent = 'OK • ' + stamp();
-          }catch(e){
-            status.textContent = 'ERROR • ' + stamp();
-            console.error('[DS] render error', e);
-          }
-        }).catch(function(e){
-          status.textContent = 'ERROR • ' + stamp();
-          console.error('[DS] tick error', e);
-        }).finally(function(){
-          setTimeout(tick, interval);
-        });
-      }
-      tick();
-    }
-
-    // boot
     var qs = new URLSearchParams(location.search);
-    var default1 = 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
-    var default2 = 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal2.json';
-    initDual({
-      url1: qs.get('url1') || default1,
-      url2: qs.get('url2') || default2,
-      interval: +(qs.get('interval') || 15000)
-    });
+    var url1 = qs.get('url1') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
+    var url2 = qs.get('url2') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal2.json';
+    var interval = +(qs.get('interval') || 15000);
+
+    function tick(){
+      Promise.allSettled([fetchJSON(url1), fetchJSON(url2)]).then(function(res){
+        var a = res[0], b = res[1];
+        if(a.status==='fulfilled') render('feedL', a.value);
+        if(b.status==='fulfilled') render('feedR', b.value);
+        document.getElementById('status').textContent = 'OK • ' + stamp();
+      }).catch(function(e){
+        document.getElementById('status').textContent = 'ERR • ' + stamp();
+        console.error('tick error', e);
+      }).then(function(){
+        setTimeout(tick, interval);
+      });
+    }
+    tick();
   })();
   </script>
 </body>
