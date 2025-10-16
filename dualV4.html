@@ -7,20 +7,19 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/style.css">
 <style>
-  /* Fallback por si style.css no carga */
-  body { background:#0b0f1a; color:#e8ecff; margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
-  .bar.top,.bar.bottom{ padding:10px 14px; background:#121826; border-bottom:1px solid #1e2740; }
-  .bar.bottom{ border-top:1px solid #1e2740; border-bottom:none; }
-  .brand{ font-weight:700; letter-spacing:.3px; }
-  .now{ float:right; opacity:.85; }
-  .dual{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px; }
-  .panel{ position:relative; background:#0e1424; border:1px solid #1b2441; border-radius:12px; overflow:hidden; }
-  .panel-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#121a30; border-bottom:1px solid #1b2441; }
-  .title{ font-weight:600; }
-  .tags .tag{ display:inline-block; font-size:12px; opacity:.7; margin-left:8px; }
-  .feed{ padding:12px; white-space:pre-wrap; line-height:1.35; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:14px; color:#cfd6ff; min-height:120px; }
-  .empty{ opacity:.6; }
-  .hint{ opacity:.7; font-size:12px; }
+  body{background:#0b0f1a;color:#e8ecff;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .bar.top,.bar.bottom{padding:10px 14px;background:#121826;border-bottom:1px solid #1e2740}
+  .bar.bottom{border-top:1px solid #1e2740;border-bottom:none}
+  .brand{font-weight:700;letter-spacing:.3px}
+  .now{float:right;opacity:.85}
+  .dual{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px}
+  .panel{position:relative;background:#0e1424;border:1px solid #1b2441;border-radius:12px;overflow:hidden}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#121a30;border-bottom:1px solid #1b2441}
+  .title{font-weight:600}
+  .tags .tag{display:inline-block;font-size:12px;opacity:.7;margin-left:8px}
+  .feed{padding:12px;white-space:pre-wrap;line-height:1.35;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:14px;color:#cfd6ff;min-height:120px}
+  .empty{opacity:.6}
+  .hint{opacity:.7;font-size:12px}
 </style>
 </head>
 <body class="theme-broadcast">
@@ -53,52 +52,52 @@
 
   <script>
   (function(){
-    function stamp(){ return (new Date()).toLocaleTimeString(); }
     function qsGet(k){ var p=new URLSearchParams(location.search); return p.get(k); }
     function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent = txt; }
 
-    // Fetch tolerante: lee como texto; si es JSON válido, lo parsea; si no, muestra tal cual.
-    function fetchJSON(u){
+    // Fetch como texto; si parsea a JSON, lo usa; si no, usa el texto crudo.
+    function fetchLoose(u){
       var url = u + (u.indexOf('?')>=0?'&':'?') + '_=' + Date.now();
       return fetch(url, { cache:'no-store' })
         .then(function(r){
-          if(!r.ok) throw new Error('HTTP '+r.status+' en '+url);
+          if(!r.ok) throw new Error('HTTP '+r.status+' '+url);
           return r.text();
         })
         .then(function(txt){
-          try { return JSON.parse(txt); }
-          catch { return { msg: txt }; }
+          try { return JSON.parse(txt); } catch(e){ return txt; }
         });
     }
 
-    // SOLO muestra el mensaje. Acepta string | objeto | array; usa msg || text.
-    function onlyMsg(data){
+    // Extrae el mensaje mostrando prioridad: text > msg
+    function extractMessage(payload){
       try{
-        if (typeof data === 'string') return data;
+        if (typeof payload === 'string') return payload;
 
-        if (Object.prototype.toString.call(data) === '[object Array]'){
-          var last = data.length ? data[data.length-1] : null;
+        if (Object.prototype.toString.call(payload) === '[object Array]'){
+          var last = payload.length ? payload[payload.length-1] : null;
           if (!last) return 'Sin datos…';
           if (typeof last === 'string') return last;
           if (last && typeof last === 'object'){
-            var t = last.msg || last.text;
-            return t ? String(t) : 'Sin datos…';
+            if (last.text) return String(last.text);
+            if (last.msg)  return String(last.msg);
+            return JSON.stringify(last);
           }
           return 'Sin datos…';
         }
 
-        if (data && typeof data === 'object'){
-          var t2 = data.msg || data.text;
-          return t2 ? String(t2) : 'Sin datos…';
+        if (payload && typeof payload === 'object'){
+          if (payload.text) return String(payload.text);
+          if (payload.msg)  return String(payload.msg);
+          return JSON.stringify(payload);
         }
-      }catch(e){}
+      } catch(e){}
       return 'Sin datos…';
     }
 
     function render(id, data){
       var el = document.getElementById(id);
       if(!el) return;
-      el.textContent = onlyMsg(data);
+      el.textContent = extractMessage(data);
     }
 
     var url1 = qsGet('url1') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
@@ -109,25 +108,19 @@
     if (title2) setText('titleR', title2);
 
     function tick(){
-      Promise.allSettled([fetchJSON(url1), fetchJSON(url2)])
-        .then(function(res){
-          // logs mínimos para depurar en consola
-          console.log('[tick]', { a: res[0].status, aVal: res[0].value, b: res[1].status, bVal: res[1].value });
-
-          if(res[0].status==='fulfilled') render('feedL', res[0].value);
-          if(res[1].status==='fulfilled') render('feedR', res[1].value);
-          document.getElementById('status').textContent = 'OK • ' + stamp();
-        })
-        .catch(function(e){
-          document.getElementById('status').textContent = 'ERR • ' + stamp();
-          console.error('tick error', e);
-        })
-        .then(function(){
-          setTimeout(tick, interval);
-        });
+      Promise.allSettled([fetchLoose(url1), fetchLoose(url2)]).then(function(res){
+        if(res[0].status==='fulfilled') render('feedL', res[0].value);
+        if(res[1].status==='fulfilled') render('feedR', res[1].value);
+        document.getElementById('status').textContent = 'OK • ' + (new Date()).toLocaleTimeString();
+      }).catch(function(){
+        document.getElementById('status').textContent = 'ERR • ' + (new Date()).toLocaleTimeString();
+      }).then(function(){
+        setTimeout(tick, interval);
+      });
     }
     tick();
   })();
   </script>
 </body>
 </html>
+
