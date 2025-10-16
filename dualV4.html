@@ -24,7 +24,6 @@
 </style>
 </head>
 <body class="theme-broadcast">
-  <!-- NO FEED v4 -->
   <header class="bar top">
     <div class="brand">DeepSports Insights</div>
     <div class="now" id="status">cargando…</div>
@@ -64,19 +63,25 @@
         return r.json();
       });
     }
-    // SOLO msg (si no hay msg -> "Sin datos…"). Soporta string, objeto o array.
+    // SOLO muestra el mensaje. Acepta string | objeto | array, y usa msg || text.
     function onlyMsg(data){
       try{
         if (typeof data === 'string') return data;
+
         if (Object.prototype.toString.call(data) === '[object Array]'){
           var last = data.length ? data[data.length-1] : null;
           if (!last) return 'Sin datos…';
           if (typeof last === 'string') return last;
-          if (last && typeof last === 'object') return last.msg ? String(last.msg) : 'Sin datos…';
+          if (last && typeof last === 'object'){
+            var t = last.msg || last.text;
+            return t ? String(t) : 'Sin datos…';
+          }
           return 'Sin datos…';
         }
+
         if (data && typeof data === 'object'){
-          return data.msg ? String(data.msg) : 'Sin datos…';
+          var t2 = data.msg || data.text;
+          return t2 ? String(t2) : 'Sin datos…';
         }
       }catch(e){}
       return 'Sin datos…';
