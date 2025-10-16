@@ -4,44 +4,61 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DeepSports • Dual</title>
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* Fallback por si style.css no carga */
+  body { background:#0b0f1a; color:#e8ecff; margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  .bar.top,.bar.bottom{ padding:10px 14px; background:#121826; border-bottom:1px solid #1e2740; }
+  .bar.bottom{ border-top:1px solid #1e2740; border-bottom:none; }
+  .brand{ font-weight:700; letter-spacing:.3px; }
+  .now{ float:right; opacity:.85; }
+  .dual{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px; }
+  .panel{ position:relative; background:#0e1424; border:1px solid #1b2441; border-radius:12px; overflow:hidden; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#121a30; border-bottom:1px solid #1b2441; }
+  .title{ font-weight:600; }
+  .tags .tag{ display:inline-block; font-size:12px; opacity:.7; margin-left:8px; }
+  .feed{ padding:12px; white-space:pre-wrap; line-height:1.35; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; font-size:14px; color:#cfd6ff; min-height:120px; }
+  .empty{ opacity:.6; }
+  .hint{ opacity:.7; font-size:12px; }
+</style>
 </head>
 <body class="theme-broadcast">
   <header class="bar top">
     <div class="brand">DeepSports Insights</div>
-    <div class="now" id="status">—</div>
+    <div class="now" id="status">cargando…</div>
   </header>
 
   <main class="dual">
+    <!-- Izquierda -->
     <section class="panel" id="panelL">
       <div class="panel-head">
         <div class="title" id="titleL">Partido A (Canal 1)</div>
         <div class="tags"><span class="tag">Ritmo</span><span class="tag">Línea</span><span class="tag">Proyección</span></div>
       </div>
-      <div class="feed" id="feedL"></div>
-      <div class="swish" id="swishL" aria-hidden="true">🏀</div>
+      <div class="feed" id="feedL"><div class="empty">Sin datos…</div></div>
     </section>
 
+    <!-- Derecha -->
     <section class="panel" id="panelR">
       <div class="panel-head">
         <div class="title" id="titleR">Partido B (Canal 2)</div>
         <div class="tags"><span class="tag">Ritmo</span><span class="tag">Línea</span><span class="tag">Proyección</span></div>
       </div>
-      <div class="feed" id="feedR"></div>
-      <div class="swish" id="swishR" aria-hidden="true">🏀</div>
+      <div class="feed" id="feedR"><div class="empty">Sin datos…</div></div>
     </section>
   </main>
 
   <footer class="bar bottom">
-    <div class="hint">Usa: ?url1=https://…/canal1.json&url2=https://…/canal2.json&interval=15000</div>
+    <div class="hint">Params: ?url1=…/canal1.json&url2=…/canal2.json&interval=15000&title1=…&title2=…</div>
   </footer>
 
-  <!-- NO cargamos js/feed.js -->
-
-  <!-- JS inline compatible (ES5) -->
+  <!-- JS inline (ES5) -->
   <script>
   (function(){
     function stamp(){ return (new Date()).toLocaleTimeString(); }
+    function qsGet(k){ var p=new URLSearchParams(location.search); return p.get(k); }
+    function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent = txt; }
     function fetchJSON(u){
       var url = u + (u.indexOf('?')>=0?'&':'?') + '_=' + Date.now();
       return fetch(url, {cache:'no-store'}).then(function(r){
@@ -50,30 +67,35 @@
       });
     }
     function textFrom(data){
-      if (typeof data === 'string') return data;
-      if (Object.prototype.toString.call(data) === '[object Array]'){
-        var last = data[data.length-1] || {};
-        return last.text || last.msg || JSON.stringify(last);
-      }
-      if (data && typeof data === 'object'){
-        return data.text || data.msg || JSON.stringify(data);
-      }
+      try{
+        if (typeof data === 'string') return data;
+        if (Object.prototype.toString.call(data) === '[object Array]'){
+          var last = data[data.length-1] || {};
+          return last.text || last.msg || JSON.stringify(last);
+        }
+        if (data && typeof data === 'object'){
+          return data.text || data.msg || JSON.stringify(data);
+        }
+      }catch(e){}
       return 'Sin datos…';
     }
-    function render(targetId, data){
-      var el = document.getElementById(targetId);
-      if (!el) return;
+    function render(id, data){
+      var el = document.getElementById(id);
+      if(!el) return;
       el.textContent = textFrom(data);
     }
 
-    var qs = new URLSearchParams(location.search);
-    var url1 = qs.get('url1') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
-    var url2 = qs.get('url2') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal2.json';
-    var interval = +(qs.get('interval') || 15000);
+    // Parámetros
+    var url1 = qsGet('url1') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
+    var url2 = qsGet('url2') || 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal2.json';
+    var interval = +(qsGet('interval') || 15000);
+    var title1 = qsGet('title1'), title2 = qsGet('title2');
+    if (title1) setText('titleL', title1);
+    if (title2) setText('titleR', title2);
 
     function tick(){
       Promise.allSettled([fetchJSON(url1), fetchJSON(url2)]).then(function(res){
-        var a = res[0], b = res[1];
+        var a=res[0], b=res[1];
         if(a.status==='fulfilled') render('feedL', a.value);
         if(b.status==='fulfilled') render('feedR', b.value);
         document.getElementById('status').textContent = 'OK • ' + stamp();
@@ -84,9 +106,10 @@
         setTimeout(tick, interval);
       });
     }
-    tick();
+    tick(); // primer tiro inmediato
   })();
   </script>
 </body>
 </html>
+
 
