@@ -43,12 +43,13 @@
   <script src="js/feed.js"></script>
   <script>
     const qs = new URLSearchParams(location.search);
+    const default1 = 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal1.json';
+    const default2 = 'https://raw.githubusercontent.com/deepsports-insights/deep-sports-live/main/data/canal2.json';
     DS.initDual({
-      url1: qs.get('url1') || 'data/left.json',
-      url2: qs.get('url2') || 'data/right.json',
+      url1: qs.get('url1') || default1,
+      url2: qs.get('url2') || default2,
       interval: +(qs.get('interval') || 15000)
     });
   </script>
 </body>
 </html>
-
