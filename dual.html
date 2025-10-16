@@ -66,23 +66,29 @@
         return r.json();
       });
     }
-    function textFrom(data){
+
+    // SOLO msg (si no hay msg -> "Sin datos…"). Soporta string, objeto o array.
+    function onlyMsg(data){
       try{
         if (typeof data === 'string') return data;
         if (Object.prototype.toString.call(data) === '[object Array]'){
-          var last = data[data.length-1] || {};
-          return last.text || last.msg || JSON.stringify(last);
+          var last = data.length ? data[data.length-1] : null;
+          if (!last) return 'Sin datos…';
+          if (typeof last === 'string') return last;
+          if (last && typeof last === 'object') return last.msg ? String(last.msg) : 'Sin datos…';
+          return 'Sin datos…';
         }
         if (data && typeof data === 'object'){
-          return data.text || data.msg || JSON.stringify(data);
+          return data.msg ? String(data.msg) : 'Sin datos…';
         }
       }catch(e){}
       return 'Sin datos…';
     }
+
     function render(id, data){
       var el = document.getElementById(id);
       if(!el) return;
-      el.textContent = textFrom(data);
+      el.textContent = onlyMsg(data);
     }
 
     // Parámetros
@@ -111,5 +117,3 @@
   </script>
 </body>
 </html>
-
-
