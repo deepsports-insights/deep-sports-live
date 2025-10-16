@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSports • Dual</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-broadcast">
+  <header class="bar top">
+    <div class="brand">DeepSports Insights</div>
+    <div class="now" id="status">—</div>
+  </header>
+
+  <main class="dual">
+    <!-- Columna Izquierda -->
+    <section class="panel" id="panelL">
+      <div class="panel-head">
+        <div class="title" id="titleL">Partido A (Canal 1)</div>
+        <div class="tags"><span class="tag">Ritmo</span><span class="tag">Línea</span><span class="tag">Proyección</span></div>
+      </div>
+      <div class="feed" id="feedL"></div>
+      <div class="swish" id="swishL" aria-hidden="true">🏀</div>
+    </section>
+
+    <!-- Columna Derecha -->
+    <section class="panel" id="panelR">
+      <div class="panel-head">
+        <div class="title" id="titleR">Partido B (Canal 2)</div>
+        <div class="tags"><span class="tag">Ritmo</span><span class="tag">Línea</span><span class="tag">Proyección</span></div>
+      </div>
+      <div class="feed" id="feedR"></div>
+      <div class="swish" id="swishR" aria-hidden="true">🏀</div>
+    </section>
+  </main>
+
+  <footer class="bar bottom">
+    <div class="hint">
+      Usa: ?url1=https://…/canal1.json&url2=https://…/canal2.json&interval=15000
+    </div>
+  </footer>
+
+  <script src="js/feed.js"></script>
+  <script>
+    const qs = new URLSearchParams(location.search);
+    DS.initDual({
+      url1: qs.get('url1') || 'data/left.json',
+      url2: qs.get('url2') || 'data/right.json',
+      interval: +(qs.get('interval') || 15000)
+    });
+  </script>
+</body>
+</html>
+
