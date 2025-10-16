@@ -1,1 +1,76 @@
+:root{
+  --bg:#0d0b14; --card:#151225; --ink:#eaf2ff;
+  --primary:#9d7cff; --accent:#4ee0ff; --muted:#9aa7c1;
+  --ok:#8af1b1; --warn:#ffd166; --err:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:14px/1.5 Inter,system-ui,Segoe UI,Arial
+}
+/* Para overlay en OBS: descomenta si quieres fondo transparente */
+/* body{ background:transparent } */
+
+.bar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px; border-bottom:1px solid #201a33; background:#0f0c1a
+}
+.bar.bottom{ border-top:1px solid #201a33; border-bottom:none; opacity:.85 }
+.brand{ font-weight:700; letter-spacing:.3px; color:var(--accent) }
+.now{ font-variant-numeric:tabular-nums; color:var(--muted) }
+.hint{ color:var(--muted); font-size:12px }
+
+main.dual{
+  padding:16px; display:grid; grid-template-columns:1fr 1fr; gap:16px
+}
+.panel{
+  position:relative;
+  background:linear-gradient(180deg,#120f1f 0%, #0e0b18 100%);
+  border:1px solid #251e3d; border-radius:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  overflow:hidden; min-height:60vh
+}
+.panel-head{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px; border-bottom:1px solid #231c36
+}
+.title{ font-weight:700; color:#cbd7ff }
+.tags{ margin-left:auto; display:flex; gap:8px }
+.tag{
+  border:1px solid #2b2342; border-radius:999px;
+  padding:2px 10px; color:#a7b4d8; font-size:12px
+}
+.feed{
+  padding:14px 16px; display:flex; flex-direction:column-reverse;
+  gap:8px; max-height:75vh; overflow:auto
+}
+.msg{
+  background:var(--card); border:1px solid #251e3d; border-radius:12px;
+  padding:10px 12px; white-space: pre-wrap; /* respeta saltos de línea */
+}
+.row{ display:flex; justify-content:space-between; gap:12px }
+.time{ color:#9aa7c1; font-size:12px }
+.ok{ color:var(--ok) } .warn{ color:var(--warn) } .err{ color:var(--err) }
+.empty{ opacity:.7; color:var(--muted) }
+
+/* FX de canasta (discreto) */
+.swish{
+  position:absolute; right:14px; top:14px; opacity:0; pointer-events:none;
+  transform: translateY(-8px) scale(.9);
+  filter: drop-shadow(0 0 6px rgba(255,165,0,.25));
+  font-size:20px;
+}
+.panel.score .swish{ animation: swishIn .9s ease-out }
+@keyframes swishIn{
+  0%{ opacity:0; transform: translateY(-10px) scale(.8) rotate(-20deg) }
+  40%{ opacity:1; transform: translateY(0) scale(1.05) rotate(0) }
+  100%{ opacity:.0; transform: translateY(8px) scale(.9) rotate(8deg) }
+}
+.panel.score{ animation: glow .7s ease-out }
+@keyframes glow{
+  0%{ box-shadow:0 0 0 0 rgba(77,208,255,.0), 0 0 0 rgba(77,208,255,.0) }
+  30%{ box-shadow:0 0 0 0 rgba(77,208,255,.15), 0 0 28px rgba(77,208,255,.25) }
+  100%{ box-shadow:0 0 0 0 rgba(77,208,255,.0), 0 0 18px rgba(77,208,255,.18) }
+}
 
