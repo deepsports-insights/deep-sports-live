@@ -1,29 +1,19 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>DeepSports • Redirect</title>
-<script>
-  (function () {
-    var qs = location.search || "";
-    // Primero intenta dualV4.html
-    var target = "dualV5.html" + qs;
-
-    // Opcional: probar disponibilidad antes de redirigir
-    // (si prefieres directo, quita este fetch y deja solo location.replace)
-    fetch("dualV5.html", { method: "HEAD", cache: "no-store" })
-      .then(function (r) {
-        if (r.ok) location.replace(target);
-        else location.replace("dual.html" + qs); // fallback si existe el viejo
-      })
-      .catch(function () {
-        location.replace("dual.html" + qs);
-      });
-  })();
-</script>
-<noscript>
-  <meta http-equiv="refresh" content="0; url=dualV5.html">
-</noscript>
+  <meta charset="utf-8">
+  <title>DeepSports • Redirect</title>
+  <script>
+    // Redirige conservando los parámetros ?url1=...&url2=...&interval=...
+    (function () {
+      var qs = location.search || "";
+      location.replace("dualV5.html" + qs);
+    })();
+  </script>
+  <noscript>
+    <!-- Fallback si JS está desactivado -->
+    <meta http-equiv="refresh" content="0; url=dualV5.html">
+  </noscript>
 </head>
 <body></body>
 </html>
